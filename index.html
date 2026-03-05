@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temporizador para el Viernes</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1e1e2f;
+            color: #ffffff;
+            flex-direction: column;
+            text-align: center;
+        }
+        h1 {
+            color: #a8b2d1;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        #timer {
+            font-size: 4rem;
+            margin: 20px 0;
+            font-weight: bold;
+            color: #64ffda;
+            background: #112240;
+            padding: 20px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #64ffda;
+            color: #0a192f;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #52e0c4;
+        }
+        p.nota {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #8892b0;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Próximo viernes a las 15:00 en:</h1>
+    <div id="timer">Calculando...</div>
+    
+    <button onclick="solicitarPermisoNotificaciones()">Activar Notificaciones</button>
+    <p class="nota">Nota: Para recibir la notificación el lunes, esta página debe permanecer abierta en tu navegador.</p>
+
+    <script>
+        // Función para pedir permiso al usuario para enviar notificaciones
+        function solicitarPermisoNotificaciones() {
+            if (!("Notification" in window)) {
+                alert("Tu navegador no soporta notificaciones de escritorio.");
+                return;
+            }
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    alert("¡Notificaciones activadas con éxito!");
+                }
+            });
+        }
+
+        // Función que calcula la fecha y hora del próximo viernes a las 15:00
+        function obtenerProximoViernes() {
+            const ahora = new Date();
+            const proximoViernes = new Date(ahora);
+            
+            const diaActual = ahora.getDay(); // 0 = Domingo, 1 = Lunes... 5 = Viernes
+            let diasFaltantes = 5 - diaActual;
+            
+            // Si hoy es viernes y ya pasaron las 15:00, o si es sábado (6), sumar una semana
+            if (diasFaltantes < 0 || (diasFaltantes === 0 && ahora.getHours() >= 15)) {
+                diasFaltantes += 7;
+            }
+            
+            proximoViernes.setDate(ahora.getDate() + diasFaltantes);
+            proximoViernes.setHours(15, 0, 0, 0); // Establecer a las 15:00:00
+            
+            return proximoViernes;
+        }
+
+        // Función que actualiza el texto en pantalla y revisa si hay que enviar notificación
+        function actualizarTemporizador() {
+            const ahora = new Date();
+            const destino = obtenerProximoViernes();
+            const diferencia = destino - ahora;
+
+            // Cálculos de tiempo
+            const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+            const horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+            const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+
+            // Mostrar en pantalla
+            document.getElementById("timer").innerText = 
+                `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+
+            verificarNotificacionLunes(dias, horas, minutos);
+        }
+
+        // Función que revisa si es Lunes y lanza la notificación
+        function verificarNotificacionLunes(dias, horas, minutos) {
+            const ahora = new Date();
+            
+            // Comprobar si es lunes (1)
+            if (ahora.getDay() === 1) {
+                const hoy = ahora.toDateString();
+                const ultimaNotificacion = localStorage.getItem('ultimaNotificacionLunes');
+                
+                // Si la notificación de hoy no se ha enviado y hay permisos
+                if (ultimaNotificacion !== hoy && Notification.permission === "granted") {
+                    const mensaje = `Faltan ${dias} días, ${horas} horas y ${minutos} minutos para el viernes a las 15:00.`;
+                    
+                    new Notification("¡Cuenta regresiva iniciada!", {
+                        body: mensaje,
+                        requireInteraction: true
+                    });
+                    
+                    // Guardar en almacenamiento local para no repetir el mensaje el mismo día
+                    localStorage.setItem('ultimaNotificacionLunes', hoy);
+                }
+            }
+        }
+
+        // Iniciar el reloj y actualizar cada segundo
+        actualizarTemporizador();
+        setInterval(actualizarTemporizador, 1000);
+    </script>
+
+</body>
+</html>
