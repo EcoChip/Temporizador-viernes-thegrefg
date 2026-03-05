@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Center Pro</title>
+    <title>Time Center Pro + Horarios</title>
     <style>
         :root {
             --bg: #0f172a;
@@ -12,7 +12,9 @@
             --secondary: #818cf8;
             --text: #f1f5f9;
             --danger: #ef4444;
-            --celebrate: #f59e0b;
+            --pipi: #10b981;
+            --pause: #f59e0b;
+            --salida: #ec4899;
         }
 
         body {
@@ -29,10 +31,10 @@
 
         .dashboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
             width: 100%;
-            max-width: 1100px;
+            max-width: 1200px;
         }
 
         .card {
@@ -42,114 +44,159 @@
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.05);
-            transition: transform 0.3s;
         }
 
         .time-display {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: bold;
             font-variant-numeric: tabular-nums;
-            margin: 15px 0;
-            color: var(--text);
+            margin: 10px 0;
         }
 
         .label {
-            color: var(--accent);
             text-transform: uppercase;
             font-size: 0.75rem;
             letter-spacing: 1.5px;
             font-weight: bold;
+            margin-bottom: 5px;
         }
 
-        /* --- ANIMACIÓN ÉPICA --- */
+        .status-msg {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+        /* Colores específicos */
+        .color-pipi { color: var(--pipi); }
+        .color-pause { color: var(--pause); }
+        .color-salida { color: var(--salida); }
+
+        /* ANIMACIÓN ÉPICA */
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            50% { transform: translate(-1px, 2px) rotate(1deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            100% { transform: translate(1px, -2px) rotate(-0deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            40% { transform: translate(3px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            80% { transform: translate(3px, -1px) rotate(1deg); }
+            100% { transform: translate(1px, -2px) rotate(0deg); }
         }
 
         @keyframes rainbow-bg {
             0% { background: #ff0000; }
-            20% { background: #ff8800; }
-            40% { background: #ffff00; }
-            60% { background: #00ff00; }
-            80% { background: #0000ff; }
+            33% { background: #00ff00; }
+            66% { background: #0000ff; }
             100% { background: #ff0000; }
         }
 
-        .epic-mode {
-            animation: shake 0.5s infinite;
-        }
-
+        .epic-mode { animation: shake 0.1s infinite; }
         #overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            animation: rainbow-bg 0.2s infinite;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1000; justify-content: center; align-items: center; flex-direction: column;
+            animation: rainbow-bg 0.3s infinite;
         }
+        #overlay h2 { font-size: 4rem; color: white; text-shadow: 3px 3px 0 #000; text-align: center; }
+        button { background: #000; color: #fff; padding: 15px 30px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
 
-        #overlay h2 {
-            font-size: 5rem;
-            color: white;
-            text-shadow: 4px 4px 0px #000;
-            text-align: center;
-        }
-
-        button {
-            background: var(--secondary);
-            border: none;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin: 5px;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
 
     <div id="overlay">
-        <h2 id="overlay-text">¡EVENTO INICIADO!</h2>
-        <button onclick="stopEpic()">CERRAR</button>
+        <h2 id="overlay-text">¡TIEMPO COMPLETADO!</h2>
+        <button onclick="stopEpic()">CONTINUAR</button>
     </div>
 
-    <h1>Time Center</h1>
+    <h1>Time Center Pro</h1>
 
     <div class="dashboard">
-        <div class="card" id="card-viernes">
-            <div class="label">Misión: Viernes 15:00</div>
-            <div id="viernes" class="time-display">--:--:--</div>
-        </div>
-
-        <div class="card" id="card-holy">
-            <div class="label">Holy Weeks</div>
-            <div id="holy" class="time-display">--:--:--</div>
-        </div>
-
-        <div class="card" id="card-burguer">
-            <div class="label">Intercambio de Hamburguesas</div>
-            <div id="burguer" class="time-display">--:--:--</div>
+        <div class="card">
+            <div class="label color-pipi">Siguiente Pipi Pausen</div>
+            <div id="pipi-timer" class="time-display">--:--:--</div>
+            <div id="pipi-info" class="status-msg"></div>
         </div>
 
         <div class="card">
-            <div class="label">Hora Actual</div>
-            <div id="reloj" class="time-display">00:00:00</div>
+            <div class="label color-pause">Siguiente Pausen</div>
+            <div id="pause-timer" class="time-display">--:--:--</div>
+            <div id="pause-info" class="status-msg"></div>
+        </div>
+
+        <div class="card">
+            <div class="label color-salida">Siguiente Salida</div>
+            <div id="salida-timer" class="time-display">--:--:--</div>
+            <div id="salida-info" class="status-msg"></div>
+        </div>
+
+        <div class="card">
+            <div class="label">Misión: Viernes 15:00</div>
+            <div id="viernes-timer" class="time-display">--:--:--</div>
+        </div>
+
+        <div class="card">
+            <div class="label">Holy Weeks (27 Mar)</div>
+            <div id="holy-timer" class="time-display" style="font-size: 1.5rem;">--:--</div>
+        </div>
+
+        <div class="card">
+            <div class="label">Burguers (1 Jun)</div>
+            <div id="burguer-timer" class="time-display" style="font-size: 1.5rem;">--:--</div>
         </div>
     </div>
 
     <script>
-        function triggerEpic(msg) {
+        // CONFIGURACIÓN DE HORARIOS
+        const horarios = {
+            pipi: ["08:55", "10:35", "12:20", "14:10"],
+            pausen: ["09:40", "11:20", "13:05"]
+        };
+
+        function getNextTime(type) {
+            const ahora = new Date();
+            const diaSemana = ahora.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mié, 4: Jue, 5: Vie, 6: Sáb
+            
+            if (diaSemana === 0 || diaSemana === 6) return { date: null, msg: "Fin de semana" };
+
+            let listaHoras = [...horarios[type]];
+            
+            // Restricción específica para Pipi Pausen 14:10 (Solo Lun, Jue, Vie)
+            if (type === 'pipi' && ![1, 4, 5].includes(diaSemana)) {
+                listaHoras = listaHoras.filter(h => h !== "14:10");
+            }
+
+            for (let h of listaHoras) {
+                let [hora, min] = h.split(':');
+                let target = new Date();
+                target.setHours(hora, min, 0, 0);
+
+                if (target > ahora) return { date: target, msg: `A las ${h} horas` };
+            }
+
+            return { date: null, msg: `Sin ${type} hasta mañana` };
+        }
+
+        function getNextSalida() {
+            const ahora = new Date();
+            const dia = ahora.getDay();
+            let horaSalida = "";
+
+            if ([1, 4, 5].includes(dia)) horaSalida = "15:00";
+            else if ([2, 3].includes(dia)) horaSalida = "14:15";
+            else return { date: null, msg: "Sin clases hoy" };
+
+            let [h, m] = horaSalida.split(':');
+            let target = new Date();
+            target.setHours(h, m, 0, 0);
+
+            if (target > ahora) return { date: target, msg: `Hoy a las ${horaSalida}` };
+            return { date: null, msg: "Sin salidas hasta mañana" };
+        }
+
+        // ANIMACIÓN ÉPICA
+        function triggerEpic(txt) {
             const overlay = document.getElementById('overlay');
-            const overlayText = document.getElementById('overlay-text');
+            document.getElementById('overlay-text').innerText = txt;
             overlay.style.display = 'flex';
-            overlayText.innerText = msg;
             document.body.classList.add('epic-mode');
         }
 
@@ -158,54 +205,68 @@
             document.body.classList.remove('epic-mode');
         }
 
-        function updateAll() {
+        function update() {
             const ahora = new Date();
-            
-            // 1. RELOJ
-            document.getElementById('reloj').innerText = ahora.toLocaleTimeString();
 
-            // 2. LÓGICA VIERNES (Recurrente semanal)
+            // Actualizar Pipi Pausen
+            const p = getNextTime('pipi');
+            updateCard('pipi-timer', 'pipi-info', p, "¡PIPI PAUSEN!");
+
+            // Actualizar Pausen
+            const pa = getNextTime('pausen');
+            updateCard('pause-timer', 'pause-info', pa, "¡RECREO!");
+
+            // Actualizar Salida
+            const s = getNextSalida();
+            updateCard('salida-timer', 'salida-info', s, "¡LIBERTAD!");
+
+            // Viernes 15:00
             let proxViernes = new Date();
-            let dViernes = 5 - ahora.getDay();
-            if (dViernes < 0 || (dViernes === 0 && ahora.getHours() >= 15)) dViernes += 7;
-            proxViernes.setDate(ahora.getDate() + dViernes);
+            let dV = 5 - ahora.getDay();
+            if (dV < 0 || (dV === 0 && ahora.getHours() >= 15)) dV += 7;
+            proxViernes.setDate(ahora.getDate() + dV);
             proxViernes.setHours(15, 0, 0, 0);
-            updateDisplay(proxViernes, 'viernes', "¡YA ES VIERNES!");
+            renderTimer(proxViernes, 'viernes-timer', "¡FIN DE SEMANA!");
 
-            // 3. LÓGICA HOLY WEEKS (Recurrente anual - 27 de Marzo)
-            let proxHoly = new Date(ahora.getFullYear(), 2, 27, 0, 0, 0); // Mes 2 es Marzo
-            if (ahora > proxHoly) proxHoly.setFullYear(ahora.getFullYear() + 1);
-            updateDisplay(proxHoly, 'holy', "¡HOLY WEEKS!");
+            // Holy Weeks (27 Marzo recurrente)
+            let holy = new Date(ahora.getFullYear(), 2, 27);
+            if (ahora > holy) holy.setFullYear(ahora.getFullYear() + 1);
+            renderTimer(holy, 'holy-timer', "¡HOLY WEEKS!");
 
-            // 4. LÓGICA HAMBURGUESAS (Una sola vez - 1 Junio 2026)
-            let eventoBurguer = new Date(2026, 5, 1, 14, 0, 0); // Mes 5 es Junio
-            if (ahora > eventoBurguer) {
-                document.getElementById('burguer').innerText = "Evento Finalizado";
+            // Hamburguesas (1 Junio 2026 único)
+            let burguer = new Date(2026, 5, 1, 14, 0);
+            if (ahora < burguer) renderTimer(burguer, 'burguer-timer', "¡HAMBURGUESAS!");
+            else document.getElementById('burguer-timer').innerText = "Finalizado";
+        }
+
+        function updateCard(timerId, infoId, data, epicMsg) {
+            if (data.date) {
+                renderTimer(data.date, timerId, epicMsg);
+                document.getElementById(infoId).innerText = data.msg;
             } else {
-                updateDisplay(eventoBurguer, 'burguer', "¡HORA DE LAS HAMBURGUESAS!");
+                document.getElementById(timerId).innerText = "--:--:--";
+                document.getElementById(infoId).innerText = data.msg;
             }
         }
 
-        function updateDisplay(targetDate, elementId, completeMsg) {
-            const ahora = new Date();
-            const diff = targetDate - ahora;
-
-            if (diff <= 0 && diff > -2000) { // Margen de 2 seg para activar
-                triggerEpic(completeMsg);
-            }
-
-            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-            const m = Math.floor((diff / 1000 / 60) % 60);
-            const s = Math.floor((diff / 1000) % 60);
-
+        function renderTimer(target, elementId, epicMsg) {
+            const diff = target - new Date();
+            if (diff <= 0 && diff > -2000) triggerEpic(epicMsg);
+            
             if (diff > 0) {
-                document.getElementById(elementId).innerText = `${d}d ${h}h ${m}m ${s}s`;
+                const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const m = Math.floor((diff / 1000 / 60) % 60);
+                const s = Math.floor((diff / 1000) % 60);
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                
+                let text = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                if (d > 0) text = `${d}d ${text}`;
+                document.getElementById(elementId).innerText = text;
             }
         }
 
-        setInterval(updateAll, 1000);
-        updateAll();
+        setInterval(update, 1000);
+        update();
     </script>
 </body>
 </html>
