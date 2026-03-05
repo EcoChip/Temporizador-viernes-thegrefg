@@ -3,146 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temporizador para el Viernes</title>
+    <title>Time Center Pro</title>
     <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --secondary: #818cf8;
+            --text: #f1f5f9;
+            --danger: #ef4444;
+            --celebrate: #f59e0b;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background 0.5s;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.3s;
+        }
+
+        .time-display {
+            font-size: 2rem;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            margin: 15px 0;
+            color: var(--text);
+        }
+
+        .label {
+            color: var(--accent);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            font-weight: bold;
+        }
+
+        /* --- ANIMACIÓN ÉPICA --- */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            50% { transform: translate(-1px, 2px) rotate(1deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            100% { transform: translate(1px, -2px) rotate(-0deg); }
+        }
+
+        @keyframes rainbow-bg {
+            0% { background: #ff0000; }
+            20% { background: #ff8800; }
+            40% { background: #ffff00; }
+            60% { background: #00ff00; }
+            80% { background: #0000ff; }
+            100% { background: #ff0000; }
+        }
+
+        .epic-mode {
+            animation: shake 0.5s infinite;
+        }
+
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1000;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #1e1e2f;
-            color: #ffffff;
             flex-direction: column;
+            animation: rainbow-bg 0.2s infinite;
+        }
+
+        #overlay h2 {
+            font-size: 5rem;
+            color: white;
+            text-shadow: 4px 4px 0px #000;
             text-align: center;
         }
-        h1 {
-            color: #a8b2d1;
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-        #timer {
-            font-size: 4rem;
-            margin: 20px 0;
-            font-weight: bold;
-            color: #64ffda;
-            background: #112240;
-            padding: 20px 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
+
         button {
-            padding: 12px 24px;
-            font-size: 1.1rem;
-            cursor: pointer;
+            background: var(--secondary);
             border: none;
+            color: white;
+            padding: 10px 15px;
             border-radius: 8px;
-            background-color: #64ffda;
-            color: #0a192f;
-            font-weight: bold;
-            transition: background-color 0.3s;
-            margin-top: 20px;
-        }
-        button:hover {
-            background-color: #52e0c4;
-        }
-        p.nota {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            color: #8892b0;
-            max-width: 400px;
+            margin: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <h1>Próximo viernes a las 15:00 en:</h1>
-    <div id="timer">Calculando...</div>
-    
-    <button onclick="solicitarPermisoNotificaciones()">Activar Notificaciones</button>
-    <p class="nota">Nota: Para recibir la notificación el lunes, esta página debe permanecer abierta en tu navegador.</p>
+    <div id="overlay">
+        <h2 id="overlay-text">¡EVENTO INICIADO!</h2>
+        <button onclick="stopEpic()">CERRAR</button>
+    </div>
+
+    <h1>Time Center</h1>
+
+    <div class="dashboard">
+        <div class="card" id="card-viernes">
+            <div class="label">Misión: Viernes 15:00</div>
+            <div id="viernes" class="time-display">--:--:--</div>
+        </div>
+
+        <div class="card" id="card-holy">
+            <div class="label">Holy Weeks</div>
+            <div id="holy" class="time-display">--:--:--</div>
+        </div>
+
+        <div class="card" id="card-burguer">
+            <div class="label">Intercambio de Hamburguesas</div>
+            <div id="burguer" class="time-display">--:--:--</div>
+        </div>
+
+        <div class="card">
+            <div class="label">Hora Actual</div>
+            <div id="reloj" class="time-display">00:00:00</div>
+        </div>
+    </div>
 
     <script>
-        // Función para pedir permiso al usuario para enviar notificaciones
-        function solicitarPermisoNotificaciones() {
-            if (!("Notification" in window)) {
-                alert("Tu navegador no soporta notificaciones de escritorio.");
-                return;
-            }
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    alert("¡Notificaciones activadas con éxito!");
-                }
-            });
+        function triggerEpic(msg) {
+            const overlay = document.getElementById('overlay');
+            const overlayText = document.getElementById('overlay-text');
+            overlay.style.display = 'flex';
+            overlayText.innerText = msg;
+            document.body.classList.add('epic-mode');
         }
 
-        // Función que calcula la fecha y hora del próximo viernes a las 15:00
-        function obtenerProximoViernes() {
-            const ahora = new Date();
-            const proximoViernes = new Date(ahora);
-            
-            const diaActual = ahora.getDay(); // 0 = Domingo, 1 = Lunes... 5 = Viernes
-            let diasFaltantes = 5 - diaActual;
-            
-            // Si hoy es viernes y ya pasaron las 15:00, o si es sábado (6), sumar una semana
-            if (diasFaltantes < 0 || (diasFaltantes === 0 && ahora.getHours() >= 15)) {
-                diasFaltantes += 7;
-            }
-            
-            proximoViernes.setDate(ahora.getDate() + diasFaltantes);
-            proximoViernes.setHours(15, 0, 0, 0); // Establecer a las 15:00:00
-            
-            return proximoViernes;
+        function stopEpic() {
+            document.getElementById('overlay').style.display = 'none';
+            document.body.classList.remove('epic-mode');
         }
 
-        // Función que actualiza el texto en pantalla y revisa si hay que enviar notificación
-        function actualizarTemporizador() {
-            const ahora = new Date();
-            const destino = obtenerProximoViernes();
-            const diferencia = destino - ahora;
-
-            // Cálculos de tiempo
-            const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
-            const horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
-            const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
-
-            // Mostrar en pantalla
-            document.getElementById("timer").innerText = 
-                `${dias}d ${horas}h ${minutos}m ${segundos}s`;
-
-            verificarNotificacionLunes(dias, horas, minutos);
-        }
-
-        // Función que revisa si es Lunes y lanza la notificación
-        function verificarNotificacionLunes(dias, horas, minutos) {
+        function updateAll() {
             const ahora = new Date();
             
-            // Comprobar si es lunes (1)
-            if (ahora.getDay() === 1) {
-                const hoy = ahora.toDateString();
-                const ultimaNotificacion = localStorage.getItem('ultimaNotificacionLunes');
-                
-                // Si la notificación de hoy no se ha enviado y hay permisos
-                if (ultimaNotificacion !== hoy && Notification.permission === "granted") {
-                    const mensaje = `Faltan ${dias} días, ${horas} horas y ${minutos} minutos para el viernes a las 15:00.`;
-                    
-                    new Notification("¡Cuenta regresiva iniciada!", {
-                        body: mensaje,
-                        requireInteraction: true
-                    });
-                    
-                    // Guardar en almacenamiento local para no repetir el mensaje el mismo día
-                    localStorage.setItem('ultimaNotificacionLunes', hoy);
-                }
+            // 1. RELOJ
+            document.getElementById('reloj').innerText = ahora.toLocaleTimeString();
+
+            // 2. LÓGICA VIERNES (Recurrente semanal)
+            let proxViernes = new Date();
+            let dViernes = 5 - ahora.getDay();
+            if (dViernes < 0 || (dViernes === 0 && ahora.getHours() >= 15)) dViernes += 7;
+            proxViernes.setDate(ahora.getDate() + dViernes);
+            proxViernes.setHours(15, 0, 0, 0);
+            updateDisplay(proxViernes, 'viernes', "¡YA ES VIERNES!");
+
+            // 3. LÓGICA HOLY WEEKS (Recurrente anual - 27 de Marzo)
+            let proxHoly = new Date(ahora.getFullYear(), 2, 27, 0, 0, 0); // Mes 2 es Marzo
+            if (ahora > proxHoly) proxHoly.setFullYear(ahora.getFullYear() + 1);
+            updateDisplay(proxHoly, 'holy', "¡HOLY WEEKS!");
+
+            // 4. LÓGICA HAMBURGUESAS (Una sola vez - 1 Junio 2026)
+            let eventoBurguer = new Date(2026, 5, 1, 14, 0, 0); // Mes 5 es Junio
+            if (ahora > eventoBurguer) {
+                document.getElementById('burguer').innerText = "Evento Finalizado";
+            } else {
+                updateDisplay(eventoBurguer, 'burguer', "¡HORA DE LAS HAMBURGUESAS!");
             }
         }
 
-        // Iniciar el reloj y actualizar cada segundo
-        actualizarTemporizador();
-        setInterval(actualizarTemporizador, 1000);
+        function updateDisplay(targetDate, elementId, completeMsg) {
+            const ahora = new Date();
+            const diff = targetDate - ahora;
+
+            if (diff <= 0 && diff > -2000) { // Margen de 2 seg para activar
+                triggerEpic(completeMsg);
+            }
+
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((diff / 1000 / 60) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+
+            if (diff > 0) {
+                document.getElementById(elementId).innerText = `${d}d ${h}h ${m}m ${s}s`;
+            }
+        }
+
+        setInterval(updateAll, 1000);
+        updateAll();
     </script>
-
 </body>
 </html>
